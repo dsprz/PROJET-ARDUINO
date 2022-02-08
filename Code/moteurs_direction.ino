@@ -1,4 +1,4 @@
-//-- MOTEUR A --
+ //-- MOTEUR A --
 const int ENA=9; //Connecté à Arduino pin 9(sortie PWM)
 const int IN1=4; //Connecté à Arduino pin 4
 const int IN2=5; //Connecté à Arduino pin 5
@@ -11,83 +11,98 @@ const int IN4=7; //Connecté à Arduino pin 7
 //LEDs
 const int LED_VERTE = 14;
 const int LED_ROUGE = 15;
-bool roule = true;
-
-//Boutons poussoir
-//const int bouton_droite = 13;
-const int bouton_gauche = 11;
-const int bouton_stop = 2;
-const int bouton_arriere = 3;
-int val_droite = 0;
-int val_gauche = 0;
-int val_stop = 0;
-int val_arriere = 0;
+bool roule = false;
 
 //bluetooth
 char data;
+
 #include <SoftwareSerial.h>
 #define RX 2
 #define TX 13
 
 SoftwareSerial BlueTooth(RX, TX);
 
-//void droite(){
- // val_droite = digitalRead(bouton_droite);
-  //if(val_droite == LOW){
-    //Serial.println("app");
-    //analogWrite(ENA, 255);
-  //}
-  //else{analogWrite(ENA, 80);}
-//}
-
- void gauche(){
-  val_gauche = digitalRead(bouton_gauche);
-  if(val_gauche == LOW){
-    analogWrite(ENB, 255);
-  }
-  else{
-  analogWrite(ENB, 100);}
- }
 
  void arriere(){
-  val_arriere = digitalRead(bouton_arriere);
-  if(val_arriere == LOW){
-    analogWrite(ENB, -60);
-    analogWrite(ENA, -60);
-    delay(100);
-  }
+  //Marche arrière
+  digitalWrite(IN1,LOW);
+  digitalWrite(IN2,HIGH);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
  }
- void arret(){
-  val_stop = digitalRead(bouton_stop);
-  if (val_stop == LOW){
-    analogWrite(ENB, 0);
-    analogWrite(ENA, 0);
-    roule=!roule;
-    delay(100);
-  }
+
+ void avant(){
+  //Marche avant
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,LOW);
+  digitalWrite(IN4,HIGH);
  }
+ 
+
+void vitesseNormale(){
+  //Vitesse de croisière
+  analogWrite(ENA, 100);
+  analogWrite(ENB, 120);
+}
+
 
 void telecommande(){
     if(BlueTooth.available()){
     data = BlueTooth.read();
-    Serial.println(data);
-    if (data == 'G'){
-      analogWrite(ENA, 180);
+    
+    if(roule){
       analogWrite(LED_VERTE, 0);
       analogWrite(LED_ROUGE, 255);
+      Serial.println(data);
+      if (data == 'G'){
+        analogWrite(ENA, 180);
+        analogWrite(ENB, 100);
       }
-    if (data == 'D'){
-      analogWrite(ENB, 180);
-      analogWrite(LED_VERTE, 0);
-      analogWrite(LED_ROUGE, 255);
+      if (data == 'D'){
+        analogWrite(ENB, 180);
+        analogWrite(ENA, 100);
+        }
+      if (data == 'S')roule = false;
+      if (data == 'R'){
+        arriere();
+        vitesseNormale();
       }
-    if (data == 'S'){
+      if (data == 'A'){
+      avant();
+      vitesseNormale();
+      }
+      
+    }
+    else{
+      analogWrite(LED_VERTE, 255);
+      analogWrite(LED_ROUGE, 0);
       analogWrite(ENA, 0);
       analogWrite(ENB, 0);
-      analogWrite(LED_ROUGE, 0);
-      analogWrite(LED_VERTE, 255);
-      
+      if(data == 'G' || data == 'D' || data == 'A' || data == 'R'){
+        roule = true;
+        if (data == 'G'){
+          analogWrite(ENA, 180);
+          analogWrite(ENB, 100);
+          }
+        if (data == 'D'){
+          analogWrite(ENB, 180);
+          analogWrite(ENA, 100);
+          }                                                                                                                                                                                                                                                                      
+         if (data == 'R'){
+          arriere();
+          vitesseNormale();
+         }
+         if (data == 'A'){
+          avant();
+          vitesseNormale();
+         }
       }
+      if(data == 'S'){
+        vitesseNormale();
+        roule = true;
+      }
+    }
 
   }
 }
@@ -97,52 +112,25 @@ void setup() {
   delay(500);
   BlueTooth.begin(9600);
   delay(500);
+  
   pinMode(ENA,OUTPUT); // Configurer
   pinMode(ENB,OUTPUT); // les broches
   pinMode(IN1,OUTPUT); // comme sortie
   pinMode(IN2,OUTPUT);
   pinMode(IN3,OUTPUT);
   pinMode(IN4,OUTPUT);
-  // LEDS
-  //pinMode(LED_VERTE, OUTPUT);
-  //pinMode(LED_ROUGE, OUTPUT);
   
-  digitalWrite(ENA,LOW);// Moteur GAUCHE - Ne pas tourner
-  digitalWrite(ENB,LOW);// Moteur DROIT - Ne pas tourner
-  // Direction du Moteur A
-  digitalWrite(IN1,LOW);
-  digitalWrite(IN2,HIGH);
-  // Direction du Moteur B
-  // NB: en sens inverse du moteur
+  digitalWrite(ENA,LOW);
+  digitalWrite(ENB,LOW);
+  avant();
   
-  digitalWrite(IN3,HIGH);
-  digitalWrite(IN4,LOW);
-
-  //Boutons poussoir
-  //pinMode(bouton_droite, INPUT);
-  pinMode(bouton_gauche, INPUT);
-  pinMode(bouton_stop, INPUT);
-  pinMode(bouton_arriere, INPUT);
+  //Moteurs à l'arrêt
   analogWrite(ENA, 0);
   analogWrite(ENB, 0);
-  pinMode(12, OUTPUT);
 }
 
 void loop() {
-  digitalWrite(LED_VERTE, LOW);
-  digitalWrite(LED_ROUGE, HIGH);
-  digitalWrite(12, HIGH);
-  //analogWrite(ENA, 120);
-  //analogWrite(ENB, 180);
   telecommande();
     }
-  //if (roule == true){
-  //droite();
-  //gauche();}
-  //arret();
 
-
-  
-  // Direction du Moteur B
-  // NB: en sens inverse du moteur
   
